@@ -64,6 +64,10 @@ public class Alumno {
      * @return Alumno
      */
     public static Alumno fromText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        
         String[] alumnoTexto = text.split(":");
         int nia = Integer.parseInt(alumnoTexto[0]);
         String nombre = alumnoTexto[1];

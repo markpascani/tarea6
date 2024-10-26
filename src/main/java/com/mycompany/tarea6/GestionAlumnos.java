@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -24,33 +23,97 @@ public class GestionAlumnos {
 
     private Fichero fichero = new Fichero();
     private Directorio dir;
+    private Scanner sc;
+
+    // -----------------
+    // Getters y setters
+    // -----------------
+    public Fichero getFichero() {
+        return fichero;
+    }
+
+    public void setFichero(Fichero fichero) {
+        this.fichero = fichero;
+    }
+
+    public Directorio getDir() {
+        return dir;
+    }
+
+    public void setDir(Directorio dir) {
+        this.dir = dir;
+    }
+
+    public void setScanner(Scanner sc) {
+        this.sc = sc;
+    }
 
     // -------------
     // Constructores
     // -------------
     /**
-     * Constructor vacío
-     */
-    public GestionAlumnos() {
-    }
-
-    /**
      * Constructor con fichero y directorio
      *
      * @param dir
      */
-    public GestionAlumnos(Directorio dir) {
+    public GestionAlumnos(Directorio dir, Scanner sc) {
         this.dir = dir;
-        mostrarMenu();
+        this.sc = sc;
+
     }
+
+
 
     /**
      * Método que muestra los ficheros de un directorio y sleeciona uno de ellos
      * para trabajarlo
      */
-    public void mostrarMenu() {
-        Scanner sc = new Scanner(System.in);
-        File directorio = dir.getDir();
+    public void mostrarMenuInicial() {
+
+        while (true) {
+            System.out.println("""
+                           1. Crear fichero vacío.
+                           2. Elegir fichero con el que trabajar.
+                           3. Salir.""");
+
+            if (sc.hasNextInt()) {
+                int respuesta = sc.nextInt();
+                sc.nextLine(); // Limpiar la línea después de leer un int
+                switch (respuesta) {
+                    case 1 ->
+                        crearFicheroVacio();
+                    case 2 ->
+                        elegirFicheroConElQueSeTrabaja();
+                    case 3 -> {
+                        System.out.println("Cierre del programa");
+                        return; // Salir del método y finalizar el programa
+                    }
+                    default ->
+                        System.out.println("Opción fuera de rango. Selecciona 1, 2 o 3.");
+                }
+            } else {
+                System.out.println("Tienes que seleccionar una opción que sea 1, 2 o 3.");
+                sc.next(); // Limpiar la entrada no válida
+            }
+
+        }
+    }
+
+    public void crearFicheroVacio() {
+        String ficheroNuevo;
+        ficheroNuevo = solicitarString("Introduce nombre del fichero a crear: ");
+        this.fichero.crearFichero(ficheroNuevo, this.dir.getDir());
+        mostrarMenuInicial();
+    }
+
+    /**
+     * Método para elegir un fichero con el que se va a trabajar y pasar al menu
+     * principal
+     *
+     * @param sc
+     */
+    private void elegirFicheroConElQueSeTrabaja() {
+        File directorio = this.dir.getDir();
         File[] ficheros = directorio.listFiles();
         int respuesta = -1;
 
@@ -70,10 +133,7 @@ public class GestionAlumnos {
         }
         this.fichero.crearFichero(ficheros[respuesta].getName(), directorio);
         System.out.println("Has seleccionado el fichero " + ficheros[respuesta].getName());
-
         menuPrincipal(sc);
-
-        sc.close();
     }
 
     /**
@@ -86,25 +146,24 @@ public class GestionAlumnos {
             System.out.println("""
                            1. Cargar alumno.
                            2. Mostrar todos los alumnos del fichero.
-                           3. Salir.""");
+                           3. Cambiar fichero con el que se trabaja.
+                           """);
 
             if (sc.hasNextInt()) {
                 int respuesta = sc.nextInt();
                 sc.nextLine(); // Limpiar la línea después de leer un int
                 switch (respuesta) {
                     case 1 ->
-                        cargarAlumno(sc);
+                        cargarAlumno();
                     case 2 ->
                         mostrarAlumnos();
-                    case 3 -> {
-                        System.out.println("Cierre del programa");
-                        return; // Salir del método y finalizar el programa
-                    }
+                    case 3 ->
+                        elegirFicheroConElQueSeTrabaja();
                     default ->
-                        System.out.println("Opción fuera de rango. Selecciona 1, 2 o 3.");
+                        System.out.println("Opción fuera de rango. Selecciona 1, 2, 3 o 4.");
                 }
             } else {
-                System.out.println("Tienes que seleccionar una opción que sea 1, 2 o 3.");
+                System.out.println("Tienes que seleccionar una opción que sea 1, 2, 3 o 4.");
                 sc.next(); // Limpiar la entrada no válida
             }
         }
@@ -166,7 +225,12 @@ public class GestionAlumnos {
         if (ficheroAComprobar.exists()) {
             try {
                 BufferedReader lector = new BufferedReader(new FileReader(ficheroAComprobar));
-                return null != Alumno.fromText(lector.readLine());
+                String line = lector.readLine();
+                if (line != null && !line.trim().isEmpty()) {
+                    return Alumno.fromText(line) != null;
+                } else {
+                    return false;
+                }
             } catch (IOException e) {
                 return false;
             }
@@ -181,17 +245,17 @@ public class GestionAlumnos {
      *
      * @param sc
      */
-    public void cargarAlumno(Scanner sc) {
-        Alumno alumno = nuevoAlumno(sc);
+    public void cargarAlumno() {
+        Alumno alumno = nuevoAlumno();
 
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(fichero.getFichero(), true));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fichero.getFichero(), true))) {
+
             System.out.println(fichero.getFichero().getName());
             StringBuilder alumnoWriter = Alumno.toText(alumno);
-            System.out.println("Alumno a escribir: "+alumnoWriter.toString());
+            System.out.println("Alumno a escribir: " + alumnoWriter.toString());
             writer.write(alumnoWriter.toString());
             writer.newLine(); // Añadir nueva línea después de cada alumno
-             System.out.println("Alumno guardado exitosamente en el fichero."); // Confirmación en consola
+            System.out.println("Alumno guardado exitosamente en el fichero."); // Confirmación en consola
         } catch (IOException e) {
             System.out.println("No se ha podido cargar el fichero: " + e.getMessage());
         }
@@ -203,18 +267,18 @@ public class GestionAlumnos {
      *
      * @return Alumno
      */
-    private Alumno nuevoAlumno(Scanner sc) {
+    private Alumno nuevoAlumno() {
         Alumno alumno = new Alumno();
         try {
             //solicitar y crear un objeto alumno
-            alumno.setNia(solicitarEntero(sc, "Introduce el NIA del alumno: "));
-            alumno.setNombre(solicitarString(sc, "INtroduce el nombre del alumno: "));
-            alumno.setApellidos(solicitarString(sc, "Introduce los apellidos del alumno: "));
-            alumno.setGenero(solicitarGenero(sc, "Introduce el genero del alumno(H/F): "));
-            alumno.setFechaNacimiento(solicitarFecha(sc, "Introduce la fecha de nacimiento del alumno: "));
-            alumno.setCurso(solicitarString(sc, "Introduce curso del alumno: "));
-            alumno.setGrupo(solicitarString(sc, "Introduce el grupo del alumno: "));
-            alumno.setCiclo(solicitarString(sc, "Introduce el ciclo del alumno: "));
+            alumno.setNia(solicitarEntero("Introduce el NIA del alumno: "));
+            alumno.setNombre(solicitarString("INtroduce el nombre del alumno: "));
+            alumno.setApellidos(solicitarString("Introduce los apellidos del alumno: "));
+            alumno.setGenero(solicitarGenero("Introduce el genero del alumno(H/F): "));
+            alumno.setFechaNacimiento(solicitarFecha("Introduce la fecha de nacimiento del alumno: "));
+            alumno.setCurso(solicitarString("Introduce curso del alumno: "));
+            alumno.setGrupo(solicitarString("Introduce el grupo del alumno: "));
+            alumno.setCiclo(solicitarString("Introduce el ciclo del alumno: "));
         } catch (Exception e) {
             System.out.println("No se ha podido gestionar el nuevo alumno. " + e.getMessage());
         }
@@ -229,7 +293,7 @@ public class GestionAlumnos {
      * @param mensaje
      * @return int
      */
-    private int solicitarEntero(Scanner sc, String mensaje) {
+    private int solicitarEntero(String mensaje) {
         System.out.println(mensaje);
         while (true) {
             if (sc.hasNextInt()) {
@@ -251,7 +315,7 @@ public class GestionAlumnos {
      * @param mensaje
      * @return String
      */
-    private String solicitarString(Scanner sc, String mensaje) {
+    private String solicitarString(String mensaje) {
         System.out.println(mensaje);
         while (true) {
             String entrada = sc.nextLine().trim();
@@ -270,7 +334,7 @@ public class GestionAlumnos {
      * @param mensaje
      * @return LocalDate
      */
-    private LocalDate solicitarFecha(Scanner sc, String mensaje) {
+    private LocalDate solicitarFecha(String mensaje) {
         System.out.println(mensaje);
         DateTimeFormatter formato = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         while (true) {
@@ -290,7 +354,7 @@ public class GestionAlumnos {
      * @param mensaje
      * @return char
      */
-    private char solicitarGenero(Scanner sc, String mensaje) {
+    private char solicitarGenero(String mensaje) {
         System.out.println(mensaje);
         while (true) {
             String entrada = sc.next();
