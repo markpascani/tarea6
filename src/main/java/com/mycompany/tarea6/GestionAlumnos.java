@@ -62,14 +62,11 @@ public class GestionAlumnos {
 
     }
 
-
-
     /**
      * Método que muestra los ficheros de un directorio y sleeciona uno de ellos
      * para trabajarlo
      */
     public void mostrarMenuInicial() {
-
         while (true) {
             System.out.println("""
                            1. Crear fichero vacío.
@@ -79,23 +76,28 @@ public class GestionAlumnos {
             if (sc.hasNextInt()) {
                 int respuesta = sc.nextInt();
                 sc.nextLine(); // Limpiar la línea después de leer un int
+                System.out.println("Respuesta seleccionada en mostrarMenuInicial(): " + respuesta);
+
                 switch (respuesta) {
-                    case 1 ->
+                    case 1 -> {
                         crearFicheroVacio();
-                    case 2 ->
+                    }
+                    case 2 -> {
                         elegirFicheroConElQueSeTrabaja();
+                        System.out.println("Abriendo el menu principal después de elegir un fichero");
+                    }
                     case 3 -> {
                         System.out.println("Cierre del programa");
                         return; // Salir del método y finalizar el programa
                     }
-                    default ->
+                    default -> {
                         System.out.println("Opción fuera de rango. Selecciona 1, 2 o 3.");
+                    }
                 }
             } else {
                 System.out.println("Tienes que seleccionar una opción que sea 1, 2 o 3.");
-                sc.next(); // Limpiar la entrada no válida
+                sc.nextLine(); // Limpiar la entrada no válida
             }
-
         }
     }
 
@@ -103,7 +105,7 @@ public class GestionAlumnos {
         String ficheroNuevo;
         ficheroNuevo = solicitarString("Introduce nombre del fichero a crear: ");
         this.fichero.crearFichero(ficheroNuevo, this.dir.getDir());
-        mostrarMenuInicial();
+
     }
 
     /**
@@ -115,12 +117,21 @@ public class GestionAlumnos {
     private void elegirFicheroConElQueSeTrabaja() {
         File directorio = this.dir.getDir();
         File[] ficheros = directorio.listFiles();
+
+        // Verificar si hay archivos en el directorio
+        if (ficheros == null || ficheros.length == 0) {
+            System.out.println("No hay archivos disponibles en el directorio para seleccionar.");
+            return; // Salir del método si no hay archivos
+        }
+
         int respuesta = -1;
 
         System.out.println("Elige un fichero para trabajar: \n" + mostrarFicherosASeleccionar(directorio));
         while (true) {
             if (sc.hasNextInt()) {
                 respuesta = sc.nextInt();
+                sc.nextLine(); // Limpiar la línea después de leer el índice
+
                 if (respuesta >= 0 && respuesta < ficheros.length) {
                     break;
                 } else {
@@ -128,12 +139,15 @@ public class GestionAlumnos {
                 }
             } else {
                 System.out.println("Entrada inválida. Por favor, introduce un número");
-                sc.next();//Limpia la entrada no válida
+                sc.nextLine(); // Limpiar la entrada no válida
+
             }
         }
         this.fichero.crearFichero(ficheros[respuesta].getName(), directorio);
         System.out.println("Has seleccionado el fichero " + ficheros[respuesta].getName());
-        menuPrincipal(sc);
+        menuGestionAlumnos(); // Asumiendo que este es el flujo deseado
+
+        
     }
 
     /**
@@ -141,30 +155,45 @@ public class GestionAlumnos {
      *
      * @param sc
      */
-    private void menuPrincipal(Scanner sc) {
+    public void menuGestionAlumnos() {
         while (true) {
             System.out.println("""
                            1. Cargar alumno.
                            2. Mostrar todos los alumnos del fichero.
                            3. Cambiar fichero con el que se trabaja.
+                           4. Salir.
                            """);
 
             if (sc.hasNextInt()) {
                 int respuesta = sc.nextInt();
+                System.out.println("Respuesta seleccionada en menuPrincipal(): " + respuesta);
                 sc.nextLine(); // Limpiar la línea después de leer un int
+
                 switch (respuesta) {
-                    case 1 ->
+                    case 1 -> {
+                        System.out.println("Cargar alumno seleccionado");
                         cargarAlumno();
-                    case 2 ->
+                    }
+                    case 2 -> {
+                        System.out.println("Mostrar todos los alumnos seleccionado");
                         mostrarAlumnos();
-                    case 3 ->
+                    }
+                    case 3 -> {
+                        System.out.println("Cambiar fichero seleccionado");
                         elegirFicheroConElQueSeTrabaja();
-                    default ->
+                        return;
+                    }
+                    case 4 -> {
+                        System.out.println("Salir del menú principal seleccionado");
+                        return;
+                    }
+                    default -> {
                         System.out.println("Opción fuera de rango. Selecciona 1, 2, 3 o 4.");
+                    }
                 }
             } else {
                 System.out.println("Tienes que seleccionar una opción que sea 1, 2, 3 o 4.");
-                sc.next(); // Limpiar la entrada no válida
+                sc.nextLine(); // Limpiar la entrada no válida
             }
         }
     }
@@ -181,9 +210,12 @@ public class GestionAlumnos {
         File[] ficheros = dir.listFiles();
 
         //Construir el string con los nombres de los ficheros
-        for (int i = 0; i < ficheros.length; i++) {
-            sb.append(i).append(".").append(ficheros[i].getName()).append("\n");
-
+        if (ficheros == null || ficheros.length == 0) {
+            sb.append("No hay archivos disponibles en el directorio.\n");
+        } else {
+            for (int i = 0; i < ficheros.length; i++) {
+                sb.append(i).append(".").append(ficheros[i].getName()).append("\n");
+            }
         }
         return sb;
     }
@@ -197,8 +229,8 @@ public class GestionAlumnos {
         File ficheroALeer = this.fichero.getFichero();
 
         if (comprobarSiElFicheroTieneAlumnos(ficheroALeer)) {
-            try {
-                BufferedReader lector = new BufferedReader(new FileReader(ficheroALeer));
+            try (BufferedReader lector = new BufferedReader(new FileReader(ficheroALeer));) {
+
                 String line;
                 while ((line = lector.readLine()) != null) {
                     Alumno alumno = Alumno.fromText(line);
@@ -223,8 +255,8 @@ public class GestionAlumnos {
      */
     private boolean comprobarSiElFicheroTieneAlumnos(File ficheroAComprobar) {
         if (ficheroAComprobar.exists()) {
-            try {
-                BufferedReader lector = new BufferedReader(new FileReader(ficheroAComprobar));
+            try (BufferedReader lector = new BufferedReader(new FileReader(ficheroAComprobar))) {
+
                 String line = lector.readLine();
                 if (line != null && !line.trim().isEmpty()) {
                     return Alumno.fromText(line) != null;

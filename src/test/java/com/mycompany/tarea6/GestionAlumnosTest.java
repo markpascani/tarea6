@@ -1,47 +1,30 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit5TestClass.java to edit this template
- */
 package com.mycompany.tarea6;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Scanner;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.io.File;
-import java.io.PrintStream;
-import java.util.List;
+import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
+import java.io.*;
+import java.util.*;
 
-/**
- *
- * @author Mihai
- */
 public class GestionAlumnosTest {
 
     private static final String TEST_DIR = "testDir";
     private static final String TEST_FILE = "alumnos_test.txt";
     private Directorio dir;
-    private Fichero fich;
     private GestionAlumnos gestionAlumnos;
-    private Scanner sc;
 
     @BeforeEach
     public void setUp() {
         // Crear directorio de prueba
         dir = new Directorio(TEST_DIR);
-        fich = new Fichero(TEST_FILE, dir.getDir());
-        sc = new Scanner(System.in);
-        // Crear instancia de GestionAlumnos con el directorio de prueba
-        gestionAlumnos = new GestionAlumnos(dir, sc);
+        dir.getDir().mkdirs();
+        // Crear instancia de GestionAlumnos con el directorio de prueba y un Scanner simulado
+        gestionAlumnos = new GestionAlumnos(dir, new Scanner(System.in));
     }
 
     @AfterEach
     public void tearDown() {
         // Eliminar ficheros y directorios de prueba
-        File testFile = new File(TEST_DIR, TEST_FILE);
+        File testFile = new File(dir.getDir(), TEST_FILE);
         if (testFile.exists()) {
             testFile.delete();
         }
@@ -53,105 +36,89 @@ public class GestionAlumnosTest {
 
     @Test
     public void testProgramaCompleto() {
-        // Paso 1: Crear un fichero vacío
-        crearFicheroVacio();
+        // Primera sesión del programa: Crear fichero y añadir dos alumnos
+        primeraSesionCrearFicheroYAnadirDosAlumnos();
 
-        // Paso 2: Añadir 2 alumnos
-        anadirDosAlumnos();
+        // Segunda sesión del programa: Seleccionar el fichero y añadir un tercer alumno
+        segundaSesionSeleccionarFicheroYAnadirAlumno();
 
-        // Paso 3: Cerrar el programa (Simulado al terminar el método)
-        // Paso 4: Reabrir el programa (Crear una nueva instancia)
-        gestionAlumnos = new GestionAlumnos(dir, sc);
+        // Tercera sesión del programa: Seleccionar el fichero y mostrar todos los alumnos
+        terceraSesionSeleccionarFicheroYMostrarAlumnos();
 
-        // Paso 5: Seleccionar el fichero usado previamente
-        seleccionarFicheroExistente();
-
-        // Paso 6: Añadir 1 alumno
-        anadirUnAlumno();
-
-        // Paso 7: Cerrar el programa (Simulado al terminar el método)
-        // Paso 8: Reabrir el programa (Crear una nueva instancia)
-        gestionAlumnos = new GestionAlumnos(dir, sc);
-
-        // Paso 9: Seleccionar el fichero usado previamente
-        seleccionarFicheroExistente();
-
-        // Paso 10: Mostrar todos los alumnos
-        mostrarTodosLosAlumnos();
-
-        // Paso 11: Cerrar el programa (Simulado al terminar el método)
+        // Validación de los alumnos añadidos
+        verificarAlumnos();
     }
 
-    private void crearFicheroVacio() {
-        // Simular la opción de crear un fichero vacío
-        gestionAlumnos.crearFicheroVacio();
+    private void primeraSesionCrearFicheroYAnadirDosAlumnos() {
+        String inputSesion1
+                = "1\n" + TEST_FILE + "\n" // Crear el fichero vacío
+                + "2\n0\n" // Seleccionar el fichero creado
+                + "1\n" // Cargar primer alumno
+                + "1\nJuan\nPerez López\nH\n2000-05-15\nDAM\n2º\nA\n" // Datos del primer alumno
+                + "1\n" // Cargar segundo alumno
+                + "2\nMaría\nGarcía Sánchez\nF\n2001-08-22\nDAW\n1º\nB\n" // Datos del segundo alumno
+                + "4\n" // Salir del menúu principal
+                + "3\n";  // Salir del programa
 
-        // Verificar que el fichero se ha creado
-        File testFile = new File(TEST_DIR, TEST_FILE);
-        assertTrue(testFile.exists(), "El fichero vacío no se ha creado correctamente.");
+        gestionAlumnos.setScanner(new Scanner(new ByteArrayInputStream(inputSesion1.getBytes())));
+        gestionAlumnos.mostrarMenuInicial();
     }
 
-    private void anadirDosAlumnos() {
-        // Simular la entrada del usuario para añadir 2 alumnos
-        String input = "12345\nJuan\nPérez López\nH\n2000-05-15\nDAM\n2º\nA\n"
-                + "67890\nMaría\nGarcía Sánchez\nF\n2001-08-22\nDAW\n1º\nB\n";
-        Scanner sc = new Scanner(new ByteArrayInputStream(input.getBytes()));
-        gestionAlumnos.setScanner(sc);
+    private void segundaSesionSeleccionarFicheroYAnadirAlumno() {
+        String inputSesion2
+                = "2\n0\n" // Reabrir y seleccionar el fichero
+                + "1\n" // Cargar tercer alumno
+                + "3\nCarlos\nRuiz Martínez\nH\n1999-12-30\nASIR\n2º\nC\n" // Datos del tercer alumno
+                + "4\n" // Salir del menú principal
+                + "3\n";                     // Cerrar el programa
 
-        // Llamar al método para cargar el primer alumno
-        gestionAlumnos.cargarAlumno();
-
-        // Llamar al método para cargar el segundo alumno
-        gestionAlumnos.cargarAlumno();
-
-        // Verificar que los alumnos se han añadido al fichero
-        List<Alumno> alumnos = gestionAlumnos.leerAlumnosDesdeFichero();
-        assertEquals(2, alumnos.size(), "No se han añadido correctamente los 2 alumnos.");
+        gestionAlumnos.setScanner(new Scanner(new ByteArrayInputStream(inputSesion2.getBytes())));
+        gestionAlumnos.mostrarMenuInicial();
     }
 
-    private void seleccionarFicheroExistente() {
-        // Simular la entrada del usuario para seleccionar el fichero existente
-        String input = "0\n";
-        Scanner sc = new Scanner(new ByteArrayInputStream(input.getBytes()));
+    private void terceraSesionSeleccionarFicheroYMostrarAlumnos() {
+        String inputSesion3
+                = "2\n0\n" // Seleccionar el fichero
+                + "2\n" // Mostrar todos los alumnos
+                + "4\n"  // Salir del menu principal
+                + "3\n"; //Cerrar el programa
 
-        // Simular la selección del fichero
-        gestionAlumnos.mostrarMenuSeleccionFichero(sc);
-
-        // Verificar que el fichero seleccionado es el correcto
-        File ficheroSeleccionado = gestionAlumnos.getFichero().getFichero();
-        assertEquals(TEST_FILE, ficheroSeleccionado.getName(), "No se ha seleccionado el fichero correcto.");
+        gestionAlumnos.setScanner(new Scanner(new ByteArrayInputStream(inputSesion3.getBytes())));
+        gestionAlumnos.mostrarMenuInicial();
     }
 
-    private void anadirUnAlumno() {
-        // Simular la entrada del usuario para añadir 1 alumno
-        String input = "1\nCarlos\nLopez\nH\n1997-09-19\n1\nC\nASIR\n"
-                + "3\n";
-        Scanner sc = new Scanner(new ByteArrayInputStream(input.getBytes()));
-
-        // Simular el menú principal
-        gestionAlumnos.menuPrincipal(sc);
-
-        // Verificar que el alumno se ha añadido al fichero
-        List<Alumno> alumnos = gestionAlumnos.obtenerAlumnos();
-        assertEquals(3, alumnos.size(), "No se ha añadido correctamente el alumno.");
+    private List<Alumno> leerAlumnosDesdeFichero(File fichero) {
+        List<Alumno> alumnos = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(fichero))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Alumno alumno = Alumno.fromText(line);
+                if (alumno != null) {
+                    alumnos.add(alumno);
+                }
+            }
+        } catch (IOException e) {
+            fail("Error al leer el fichero de alumnos: " + e.getMessage());
+        }
+        return alumnos;
     }
 
-    private void mostrarTodosLosAlumnos() {
-        // Capturar la salida del sistema
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(outContent));
+    private void verificarAlumnos() {
+        File ficheroAlumnos = new File(dir.getDir(), TEST_FILE);
+        List<Alumno> alumnos = leerAlumnosDesdeFichero(ficheroAlumnos);
+        assertEquals(3, alumnos.size(), "El número de alumnos añadidos no es correcto.");
 
-        // Mostrar los alumnos
-        gestionAlumnos.mostrarAlumnos();
+        Alumno alumno1 = alumnos.get(0);
+        assertEquals(1, alumno1.getNia());
+        assertEquals("Juan", alumno1.getNombre());
 
-        // Restaurar System.out
-        System.setOut(originalOut);
+        Alumno alumno2 = alumnos.get(1);
+        assertEquals(2, alumno2.getNia());
+        assertEquals("María", alumno2.getNombre());
 
-        // Verificar que se muestran los 3 alumnos
-        String output = outContent.toString();
-        assertTrue(output.contains("Mihai"));
-        assertTrue(output.contains("Maria"));
-        assertTrue(output.contains("Carlos"));
+        Alumno alumno3 = alumnos.get(2);
+        assertEquals(3, alumno3.getNia());
+        assertEquals("Carlos", alumno3.getNombre());
+
     }
 }

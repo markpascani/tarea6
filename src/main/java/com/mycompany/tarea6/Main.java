@@ -15,7 +15,10 @@ public class Main {
 
         //Instanciamos el directorio y gestion de alumnos;
         Directorio directorio = new Directorio("directorio");
-        GestionAlumnos gestionAlumnos = new GestionAlumnos(directorio);
+        Scanner sc = new Scanner(System.in);
+        GestionAlumnos gestionAlumnos = new GestionAlumnos(directorio, sc);
+        
+        gestionAlumnos.mostrarMenuInicial();
 
         
     }
